@@ -19,10 +19,12 @@ package org.camunda.bpm.engine.spring;
 import java.util.Arrays;
 import java.util.HashSet;
 import java.util.Set;
+import java.util.logging.Logger;
 
 import org.camunda.bpm.engine.delegate.VariableScope;
 import org.camunda.bpm.engine.impl.scripting.engine.Resolver;
 import org.camunda.bpm.engine.impl.scripting.engine.ResolverFactory;
+import org.springframework.beans.factory.support.ScopeNotActiveException;
 import org.springframework.context.ApplicationContext;
 
 /**
@@ -37,6 +39,8 @@ import org.springframework.context.ApplicationContext;
  *
  */
 public class SpringBeansResolverFactory implements ResolverFactory, Resolver {
+
+  protected static Logger LOG = Logger.getLogger(SpringBeansResolverFactory.class.getName());
 
   private ApplicationContext applicationContext;
   private Set<String> keySet;
@@ -65,7 +69,16 @@ public class SpringBeansResolverFactory implements ResolverFactory, Resolver {
   @Override
   public Object get(Object key) {
     if (key instanceof String) {
-      return applicationContext.getBean((String) key);
+      try {
+        return applicationContext.getBean((String) key);
+
+      } catch (ScopeNotActiveException ex) {
+
+        LOG.info("Bean '" + key + "' cannot be returned since its scope is not active. "
+            + "Full exception message: " + ex.getMessage());
+
+        return null;
+      }
     } else {
       return null;
     }
